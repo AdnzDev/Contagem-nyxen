@@ -31,12 +31,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px 10px; /* Reduzido para mobile */
+            padding: 20px 10px;
             min-height: 100vh;
         }
 
         h1 {
-            font-size: 2rem; /* Reduzido para mobile */
+            font-size: 2rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 20px;
@@ -149,16 +149,34 @@
             transform: translateY(-2px);
         }
 
-        /* Área da Imagem - Ajustada para não vazar */
+        /* Botão de Remover da Tabela */
+        button.btn-remove {
+            background-color: var(--danger-color);
+            color: white;
+            width: auto;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            margin: 0 auto;
+            display: block;
+            border-radius: 4px;
+        }
+
+        button.btn-remove:hover {
+            box-shadow: 0 0 10px var(--danger-color);
+            transform: scale(1.05);
+        }
+
+        /* Área da Imagem */
         .capture-area {
             background-color: var(--panel-bg);
-            padding: 20px 10px; /* Paddings laterais menores */
+            padding: 20px 10px;
             border-radius: 12px;
             border: 2px solid var(--secondary-color);
             width: 100%;
             max-width: 800px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            overflow: hidden; /* Evita que o conteúdo saia da caixa */
+            overflow: hidden;
+            overflow-x: auto; /* Permite rolagem no mobile se a tabela for muito larga */
         }
 
         .capture-header {
@@ -188,12 +206,13 @@
             width: 100%;
             border-collapse: collapse;
             text-align: center;
-            font-size: 0.85rem; /* Fonte um pouco menor para caber na tela */
+            font-size: 0.85rem;
         }
 
         th, td {
-            padding: 10px 5px; /* Reduzido para caber melhor */
+            padding: 10px 5px;
             border-bottom: 1px solid var(--table-border);
+            vertical-align: middle;
         }
 
         th {
@@ -220,15 +239,14 @@
             font-size: 0.95rem;
         }
 
-        /* Estilo da punição apagadinha embaixo do nome */
         .penalty-info {
             display: block;
             font-size: 0.65rem;
             color: #ff4757;
-            opacity: 0.7; /* Apagadinho */
+            opacity: 0.7;
             margin-top: 2px;
             font-weight: 400;
-            white-space: nowrap; /* Tenta manter na mesma linha do bloco */
+            white-space: nowrap;
         }
 
         /* Destaques do pódio */
@@ -319,6 +337,7 @@
                     <th class="team-cell">Line</th>
                     <th>Kills</th>
                     <th>Total</th>
+                    <th data-html2canvas-ignore="true">Ação</th>
                 </tr>
             </thead>
             <tbody id="corpoTabela">
@@ -333,7 +352,7 @@
 
         function calcularPontosPosicao(posicao) {
             if (!posicao || posicao <= 0) return 0;
-            if (posicao === 1) return 20;
+            if (posicao === 1) return 15;
             if (posicao === 2) return 11;
             if (posicao === 3) return 9;
             if (posicao === 4) return 7;
@@ -360,8 +379,9 @@
             }
 
             const totalKills = kill1 + kill2 + kill3;
+            const pontosKills = totalKills * 2;
             const pontosColocacao = calcularPontosPosicao(pos1) + calcularPontosPosicao(pos2) + calcularPontosPosicao(pos3);
-            const pontosTotais = totalKills + pontosColocacao - penalidade;
+            const pontosTotais = pontosKills + pontosColocacao - penalidade;
 
             classificacao.push({ 
                 nome, 
@@ -371,6 +391,19 @@
                 pontosTotais 
             });
 
+            ordenarEAtualizar();
+            limparFormulario();
+        }
+
+        // Função separada para remover
+        function removerLine(index) {
+            if (confirm(`Tem certeza que deseja remover a line "${classificacao[index].nome}"?`)) {
+                classificacao.splice(index, 1); // Remove 1 item a partir do index
+                ordenarEAtualizar();
+            }
+        }
+
+        function ordenarEAtualizar() {
             classificacao.sort((a, b) => {
                 if (b.pontosTotais !== a.pontosTotais) {
                     return b.pontosTotais - a.pontosTotais;
@@ -379,7 +412,6 @@
             });
 
             atualizarTabela();
-            limparFormulario();
         }
 
         function atualizarTabela() {
@@ -389,7 +421,6 @@
             classificacao.forEach((line, index) => {
                 let htmlPenalidade = "";
 
-                // Adiciona o texto apagadinho de punição se houver
                 if (line.penalidade > 0) {
                     let textoMotivo = line.motivo !== "" ? ` - ${line.motivo}` : "";
                     htmlPenalidade = `<span class="penalty-info">(-${line.penalidade} pts${textoMotivo})</span>`;
@@ -404,6 +435,9 @@
                     </td>
                     <td>${line.totalKills}</td>
                     <td>${line.pontosTotais}</td>
+                    <td data-html2canvas-ignore="true">
+                        <button class="btn-remove" onclick="removerLine(${index})" title="Remover Line">X</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
